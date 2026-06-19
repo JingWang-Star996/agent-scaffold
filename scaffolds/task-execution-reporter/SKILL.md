@@ -4,7 +4,7 @@ description: |
   [脚手架/辅助轮] 任务执行后自动生成报告，统计调用的 Skills、执行时间、Token 消耗，并进行自动校验。
   这是 LLM Agent 养成过程中的辅助工具——有需要时装上，用得上时保留，内化后拆掉。
   不是强制规则，是可选的养成辅助。
-version: 1.0.0
+version: 1.1.0
 author: Hermes
 tags: [scaffold, reporting, verification, skill-tracking, optional]
 ---
@@ -244,8 +244,136 @@ tags: [scaffold, reporting, verification, skill-tracking, optional]
 - 执行报告不记录（临时数据）
 - 但报告中的改进建议可以触发 memory 更新
 
+## 语义验证（Semantic Verification）
+
+> **解决的问题**：上下文污染导致 Agent 无法正确自检。
+> 当对话历史很长时，Agent 容易被之前的操作模式锚定，无法客观判断"目标是否真正达成"。
+
+### 核心思路
+
+不在被污染的对话中自检，而是 **spawn 子会话** 进行独立验证。
+
+子会话零上下文 = 没有操作惯性，只看证据指纹。
+
+### Verification Manifest（验证清单）
+
+主会话在检查点生成结构化清单，传给子会话。不是传对话历史（太大会 token 超标），而是传**证据指纹**：
+
+```yaml
+verification_manifest:
+  # 1. 原始意图（一句话，从用户消息提取）
+  original_intent: "验证 tree-sitter 是否已在项目中生效"
+  task_type: "verification"  # installation | verification | configuration | creation | analysis
+  
+  # 2. 预期状态（什么算完成）
+  expected_state:
+    - check: "tree-sitter 配置文件存在"
+      evidence_cmd: "ls .tree-sitter/config.json"
+      expect: "file exists"
+    - check: "代码中使用了 tree-sitter API"
+      evidence_cmd: "grep -r 'tree_sitter' src/ | head -5"
+      expect: "有匹配结果"
+  
+  # 3. 实际证据（主会话执行后采集，只保留关键输出）
+  actual_evidence:
+    - check: "tree-sitter 配置文件存在"
+      output: ".tree-sitter/config.json"
+      exit_code: 0
+    - check: "代码中使用了 tree-sitter API"
+      output: "(empty)"
+      exit_code: 1
+  
+  # 4. 执行轨迹摘要（语义指纹）
+  execution_trace:
+    total_calls: 12
+    categories: {install: 8, configure: 2, verify: 0, search: 2}
+    # ↑ verify:0 本身就是红旗——意图是验证但零验证操作
+```
+
+### 子会话验证逻辑
+
+子会话拿到 manifest（~300-500 tokens）后检查三项：
+
+1. **意图-轨迹一致性**：task_type 是 verification，但 categories 里 verify:0 → 🚩 语义偏差
+2. **预期-证据匹配**：expected vs actual 逐条比对 → 发现未达成的检查项
+3. **操作模式偏差**：intent 说"验证"，trace 全是 install → 🚩 上下文污染信号
+
+### 子会话 Prompt 模板
+
+```
+你是独立验证员，没有之前的对话上下文。
+请基于以下验证清单进行客观检查：
+
+## 验证清单
+{verification_manifest}
+
+## 检查项
+1. 意图-轨迹一致性：task_type 与实际执行操作是否匹配？
+2. 预期-证据匹配：每个 expected_state 是否都有对应的 actual_evidence 支持？
+3. 操作模式偏差：执行轨迹中是否存在与意图不符的操作模式？
+
+## 输出
+- PASS：所有检查通过
+- FAIL：说明具体问题和建议
+
+只报告事实，不要猜测意图。
+```
+
+### 触发条件
+
+语义验证**不是每次任务都触发**，只在以下情况启用：
+
+- 任务涉及多轮工具调用（>5 次）
+- 任务类型是 verification/analysis（容易被锚定）
+- 用户明确要求"检查一下"
+- 到达预设检查点
+
+### 配置开关
+
+```yaml
+# 在 config 或 skill 配置中控制
+semantic_verification:
+  enabled: true          # 总开关
+  trigger_threshold: 5   # 工具调用次数阈值
+  task_types:            # 需要语义验证的任务类型
+    - verification
+    - analysis
+    - diagnosis
+  checkpoint_mode: false # 是否启用检查点模式（vs 仅完成后验证）
+```
+
+### 与现有校验的关系
+
+| 校验类型 | 执行者 | 上下文 | 检测目标 |
+|---------|--------|--------|---------|
+| 自动校验（规则） | 主会话 | 有上下文 | 格式、步骤完整性 |
+| 语义验证（子会话） | 子会话 | 零上下文 | 意图理解偏差、上下文污染 |
+
+两者互补：
+- 自动校验检查"有没有做"
+- 语义验证检查"做的是不是对的"
+
+### 示例：上下文污染检测
+
+```
+场景：用户说"检查一下 tree-sitter 有没有用上"
+Agent 之前一直在装 tree-sitter，被锚定在"安装"模式
+
+Verification Manifest:
+  original_intent: "验证 tree-sitter 是否已生效"
+  task_type: "verification"
+  execution_trace:
+    categories: {install: 8, configure: 2, verify: 0}
+    
+子会话检测:
+  🚩 意图-轨迹不一致：task_type=verification 但 verify=0
+  🚩 操作模式偏差：全是 install 操作，没有验证操作
+  结论：FAIL - Agent 可能误解了"检查"的含义
+```
+
 ## 何时加载此 Skill
 
 - 任务完成后
 - 用户要求生成执行报告
 - 需要复盘任务执行情况
+- 多轮工具调用后需要语义验证

@@ -30,12 +30,13 @@ Scaffolds are **not mandatory rules**. They are optional aids that:
 
 ### 1. Task Execution Reporter
 
-**Purpose**: Generate execution reports after tasks
+**Purpose**: Generate execution reports after tasks + semantic verification via sub-sessions
 
 **What it does**:
 - Tracks which skills were loaded
 - Counts tool calls and execution time
 - Runs automatic verification checks
+- **Spawns a zero-context sub-session to detect intent drift and context pollution**
 - Suggests improvements
 
 **When to use**:
@@ -215,6 +216,63 @@ Continuous improvement
 ## Improvement Suggestions
 - Load architecture-decision-records next time
 - Consider adding test coverage check
+```
+
+## Semantic Verification
+
+A key feature of the Task Execution Reporter is **semantic verification** — detecting when the agent has drifted from the user's original intent due to context pollution.
+
+### The Problem
+
+When a conversation is long, the agent gets anchored to previous operation patterns. For example:
+- User says "check if tree-sitter is working"
+- Agent was previously installing tree-sitter
+- Agent interprets "check" as "install again" instead of "verify it's working"
+
+This is **context pollution** — the agent can't self-diagnose because it's trapped in the same contaminated context.
+
+### The Solution
+
+Spawn a **zero-context sub-session** that only sees a structured **Verification Manifest** (~300-500 tokens), not the full conversation history:
+
+```yaml
+verification_manifest:
+  original_intent: "Verify tree-sitter is working in the project"
+  task_type: "verification"
+  expected_state:
+    - check: "tree-sitter config exists"
+      evidence_cmd: "ls .tree-sitter/config.json"
+    - check: "Code uses tree-sitter API"
+      evidence_cmd: "grep -r 'tree_sitter' src/ | head -5"
+  actual_evidence:
+    - check: "tree-sitter config exists"
+      output: ".tree-sitter/config.json"
+      exit_code: 0
+    - check: "Code uses tree-sitter API"
+      output: "(empty)"
+      exit_code: 1
+  execution_trace:
+    total_calls: 12
+    categories: {install: 8, configure: 2, verify: 0, search: 2}
+    # ↑ verify:0 is a red flag — intent is verification but zero verify ops
+```
+
+The sub-session checks three things:
+1. **Intent-trace consistency**: task_type is "verification" but verify count is 0 → 🚩
+2. **Expected-actual match**: which expected states lack supporting evidence?
+3. **Operation pattern drift**: intent says "verify" but trace is all "install" → 🚩
+
+### Configuration
+
+```yaml
+semantic_verification:
+  enabled: true          # Master switch
+  trigger_threshold: 5   # Min tool calls before triggering
+  task_types:            # Which task types need verification
+    - verification
+    - analysis
+    - diagnosis
+  checkpoint_mode: false # Checkpoint mode vs post-completion only
 ```
 
 ## Comparison: ECC vs Scaffold
