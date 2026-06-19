@@ -88,27 +88,27 @@ Scaffolds are **not mandatory rules**. They are optional aids that:
 
 ### 4. Requirement Mediator
 
-**Purpose**: Act as a "requirement translator" between users and execution AI
+**Purpose**: Post-execution requirement compliance check
 
 **What it does**:
-- Helps users articulate vague needs into clear specifications
-- Uses structured clarification (options, not open questions)
-- Detects implicit signals from complaints and corrections
-- Reduces cognitive load through progressive disclosure
+- Checks if execution results match user's real needs after task completion
+- Infers requirement drift from user complaints, corrections, and compromises
+- Detects implicit signals (negation, correction, compromise, iteration, frustration)
+- Provides correction options when drift is detected
 
 **When to use**:
-- ✅ User says "help me make X" but X is vague
-- ✅ User says "that's not what I want" (correction signal)
-- ✅ Complex tasks where execution is expensive
-- ✅ Building "clarify before execute" habits
+- ✅ After task execution is complete
+- ✅ User says "that's not what I want" (negation signal)
+- ✅ User says "forget it, this is fine" (compromise signal)
+- ✅ Building "check requirement compliance after execution" habits
 
 **When to disable**:
 - ✅ Simple, unambiguous requests
-- ✅ User says "don't ask, just do it"
+- ✅ User says "don't check"
 - ✅ Low-cost tasks where iteration is cheap
 - ✅ Already internalized requirement understanding
 
-**Philosophy**: "化繁就简" — use LLM's native capabilities instead of engineering complexity. One prompt, no complex modules.
+**Philosophy**: "化繁就简" — use LLM's native capabilities instead of engineering complexity. One prompt, no complex modules. Post-execution check instead of pre-execution clarification.
 
 ## Installation
 
