@@ -302,6 +302,11 @@ semantic_verification:
 - progress-tracker — Track long-running tasks
 - error-pattern-detector — Identify recurring mistakes
 
+## Documentation
+
+- **[Philosophy](docs/PHILOSOPHY.md)** — The training wheels philosophy and design principles
+- **[Post-Verification Theory](docs/POST-VERIFICATION-THEORY.md)** — Deep dive into semantic verification, context pollution, and zero-context sub-sessions (Chinese)
+
 ## Contributing
 
 Contributions welcome! Areas for improvement:

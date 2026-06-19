@@ -300,6 +300,11 @@ semantic_verification:
 - progress-tracker — 追踪长任务进度
 - error-pattern-detector — 识别重复错误模式
 
+## 文档
+
+- **[设计哲学](docs/PHILOSOPHY.md)** — 辅助轮哲学与设计原则
+- **[后验证理论](docs/POST-VERIFICATION-THEORY.md)** — 语义验证、上下文污染、零上下文子会话的深度探讨
+
 ## 贡献
 
 欢迎贡献！改进方向：
