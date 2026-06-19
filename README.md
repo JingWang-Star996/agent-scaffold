@@ -86,6 +86,30 @@ Scaffolds are **not mandatory rules**. They are optional aids that:
 - ✅ Verification habits already formed
 - ✅ Simple operations don't need it
 
+### 4. Requirement Mediator
+
+**Purpose**: Act as a "requirement translator" between users and execution AI
+
+**What it does**:
+- Helps users articulate vague needs into clear specifications
+- Uses structured clarification (options, not open questions)
+- Detects implicit signals from complaints and corrections
+- Reduces cognitive load through progressive disclosure
+
+**When to use**:
+- ✅ User says "help me make X" but X is vague
+- ✅ User says "that's not what I want" (correction signal)
+- ✅ Complex tasks where execution is expensive
+- ✅ Building "clarify before execute" habits
+
+**When to disable**:
+- ✅ Simple, unambiguous requests
+- ✅ User says "don't ask, just do it"
+- ✅ Low-cost tasks where iteration is cheap
+- ✅ Already internalized requirement understanding
+
+**Philosophy**: "化繁就简" — use LLM's native capabilities instead of engineering complexity. One prompt, no complex modules.
+
 ## Installation
 
 ```bash
