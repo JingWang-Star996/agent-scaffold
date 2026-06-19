@@ -49,25 +49,7 @@ Scaffolds are **not mandatory rules**. They are optional aids that:
 - ✅ Simple tasks don't need overhead
 - ✅ User says "no report needed"
 
-### 2. Pure Output
-
-**Purpose**: Eliminate AI-speak, improve token efficiency
-
-**What it does**:
-- Bans filler phrases ("Great question!", "I'd be happy to...")
-- Enforces direct, concise communication
-- Promotes active voice and short sentences
-
-**When to use**:
-- ✅ Writing long documents
-- ✅ User feedback is "too verbose"
-- ✅ Catching yourself in templates
-
-**When to disable**:
-- ✅ Output style already internalized
-- ✅ Casual conversation doesn't need it
-
-### 3. Self-Verification
+### 2. Self-Verification
 
 **Purpose**: Ensure outputs are actually correct
 
@@ -86,7 +68,7 @@ Scaffolds are **not mandatory rules**. They are optional aids that:
 - ✅ Verification habits already formed
 - ✅ Simple operations don't need it
 
-### 4. Requirement Mediator
+### 3. Requirement Mediator
 
 **Purpose**: Post-execution requirement compliance check
 
@@ -131,7 +113,7 @@ cd agent-scaffold
 ./install.sh
 
 # Install specific scaffolds only
-./install.sh --only task-execution-reporter,pure-output
+./install.sh --only task-execution-reporter,self-verification
 
 # Install to both (auto-detect)
 ./install.sh
@@ -187,7 +169,6 @@ Auto-collect data
   - Execution time
     ↓
 Run verification checks
-  - Output style (pure-output)
   - Verification steps (self-verification)
   - Progress reporting
   - Skill completeness
@@ -223,11 +204,9 @@ Continuous improvement
 ## Skills Loaded
 | Skill | Purpose | When |
 |-------|---------|------|
-| pure-output | Output style | Start |
 | self-verification | Verification | After file ops |
 
 ## Auto-Verification
-- [✅] Output style: No AI-speak
 - [✅] Verification: Read back 3 files
 - [✅] Progress: Reported 2x
 - [✅] Delivery: Complete
@@ -316,10 +295,10 @@ semantic_verification:
 
 ## Project Status
 
-**Current scaffolds**: 3
+**Current scaffolds**: 2
 - task-execution-reporter
-- pure-output
 - self-verification
+- requirement-mediator
 
 **Planned scaffolds**:
 - skill-recommender — Suggest skills based on task type
